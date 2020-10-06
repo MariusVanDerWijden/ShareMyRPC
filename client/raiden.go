@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -19,12 +20,12 @@ func NewRaiden(url string) *Raiden {
 }
 
 func putReq(url string, data []byte) (*http.Response, error) {
-	req, err := http.NewRequest("PUT", url, nil)
+	reader := bytes.NewReader(data)
+	req, err := http.NewRequest("PUT", url, reader)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	// TODO set payload
 	return http.DefaultClient.Do(req)
 }
 
@@ -56,21 +57,19 @@ func (r *Raiden) JoinNetwork(token, funds string) error {
 }
 
 type Opening struct {
-	/*
-			"token_network_address": "0x3C158a20b47d9613DDb9409099Be186fC272421a",
-		    "channel_identifier": "99",
-		    "partner_address": "0x61C808D82A3Ac53231750daDc13c777b59310bD9",
-		    "token_address": "0x9aBa529db3FF2D8409A1da4C9eB148879b046700",
-		    "balance": "1337",
-		    "total_deposit": "1337",
-		    "total_withdraw": "0",
-		    "state": "opened",
-		    "settle_timeout": "500",
-			"reveal_timeout": "50"
-	*/
+	TokenNetworkAddress string `json:"token_network_address"`
+	ChannelIdentifier   string `json:"channel_identifier"`
+	PartnerAddress      string `json:"partner_address"`
+	TokenAddress        string `json:"token_address"`
+	Balance             string `json:"balance"`
+	TotalDeposit        string `json:"total_deposit"`
+	TotalWithdraw       string `json:"total_withdraw"`
+	State               string `json:"state"`
+	SettleTimeout       string `json:"settle_timeout"`
+	RevealTimeout       string `json:"reveal_timeout"`
 }
 
-func (r *Raiden) OpenChannel(partner, token, deposit, timeout string) error {
+func (r *Raiden) OpenChannel(partner, token, deposit, timeout string) (*Opening, error) {
 	type request struct {
 		PartnerAddress string `json:"partner_address"`
 		TokenAddress   string `json:"token_address"`
@@ -85,22 +84,26 @@ func (r *Raiden) OpenChannel(partner, token, deposit, timeout string) error {
 	}
 	data, err := json.Marshal(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	url := fmt.Sprintf("%v/%v", r.url, "channels")
-	putReq(url, data)
-	return nil
+	resp, err := putReq(url, data)
+	if err != nil {
+		return nil, err
+	}
+	var response *Opening
+	return response, json.NewDecoder(resp.Body).Decode(response)
 }
 
-func (r *Raiden) QueryChannel(token, other string) error {
+func (r *Raiden) QueryChannel(token, other string) (*Opening, error) {
 	url := fmt.Sprintf("%v/%v/%v/%v", r.url, "channels", token, other)
 	resp, err := http.Get(url)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
-	// TODO handle resp
-	return nil
+	var response *Opening
+	return response, json.NewDecoder(resp.Body).Decode(response)
 }
 
 func (r *Raiden) DepositToken(token, other, amount string) error {
