@@ -1,9 +1,10 @@
-package client
+package raiden
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -29,18 +30,16 @@ func putReq(url string, data []byte) (*http.Response, error) {
 	return http.DefaultClient.Do(req)
 }
 
-func (r *Raiden) GetTokenList() error {
+func (r *Raiden) GetTokenList() ([]byte, error) {
 	url := fmt.Sprintf("%v/%v", r.url, "tokens")
 	resp, err := http.Get(url)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer resp.Body.Close()
-	// TODO handle resp
-	return nil
+	return ioutil.ReadAll(resp.Body)
 }
 
-func (r *Raiden) JoinNetwork(token, funds string) error {
+func (r *Raiden) JoinNetwork(token, funds string) ([]byte, error) {
 	type request struct {
 		Funds string `json:"funds"`
 	}
@@ -49,11 +48,14 @@ func (r *Raiden) JoinNetwork(token, funds string) error {
 	}
 	data, err := json.Marshal(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	url := fmt.Sprintf("%v/%v/%v", r.url, "connections", token)
-	putReq(url, data)
-	return nil
+	resp, err := putReq(url, data)
+	if err != nil {
+		return nil, err
+	}
+	return ioutil.ReadAll(resp.Body)
 }
 
 type Opening struct {
