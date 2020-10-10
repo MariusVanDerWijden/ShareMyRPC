@@ -52,9 +52,13 @@ func (ec *Client) Close() {
 
 // Send sends some money to the peer.
 func (ec *Client) Send(amount int) {
-	am := fmt.Sprint("%v", amount)
-	if err := ec.r.PayToken(ec.token, ec.other, am); err != nil {
+	am := fmt.Sprintf("%v", amount)
+	msg, err := ec.r.PayToken(ec.token, ec.other, am)
+	if err != nil {
 		panic(err)
+	}
+	if msg == "The method is not allowed for the requested URL." {
+		panic(msg)
 	}
 }
 
