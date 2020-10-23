@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/MariusVanDerWijden/ShareMyRPC/raiden"
@@ -16,10 +17,19 @@ type Server struct {
 	peer    string
 }
 
-func NewServer(url, token, peer string) *Server {
-	return &Server{
-		node: raiden.NewRaiden(url),
+func NewServer(url, token, peer string) (*Server, error) {
+	node := raiden.NewRaiden(url)
+	h, err := node.PaymentHistory(token, peer)
+	if err != nil {
+		fmt.Printf("could not retrieve payment history")
+		return nil, err
 	}
+	return &Server{
+		node:    node,
+		token:   token,
+		peer:    peer,
+		history: h,
+	}, nil
 }
 
 // PaymentReceived returns true if a payment was received
@@ -56,5 +66,7 @@ func (s *Server) pollHistory() bool {
 	}
 	// new entries in history, update history
 	s.history = h
+	a := *h
+	fmt.Printf("Received payment with value %v\n", a[len(a)-1].Amount)
 	return true
 }

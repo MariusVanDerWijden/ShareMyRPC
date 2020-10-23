@@ -126,6 +126,7 @@ func (r *Raiden) DepositToken(token, other, amount string) error {
 }
 
 func (r *Raiden) PayToken(token, other, amount string) (string, error) {
+	fmt.Printf("Sending %v to %v in token %v\n", amount, other, token)
 	type request struct {
 		Amount string `json:"amount"`
 	}

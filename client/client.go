@@ -10,14 +10,15 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 var (
 	generalCost         = 4
-	stateAccessCost     = 4
+	stateAccessCost     = 5
 	filterCost          = 8
 	contractCallingCost = 3
-	estimateGasCost     = 1
+	estimateGasCost     = 2
 	sendTransactionCost = 1
 )
 
@@ -45,6 +46,11 @@ func NewClientFromURL(clientURL, raidenURL string) (*Client, error) {
 	return NewClient(c, r), nil
 }
 
+func (ec *Client) Init(token, peer string) {
+	ec.token = token
+	ec.other = peer
+}
+
 // Close closes the connection to the peer.
 func (ec *Client) Close() {
 	ec.c.Close()
@@ -52,7 +58,7 @@ func (ec *Client) Close() {
 
 // Send sends some money to the peer.
 func (ec *Client) Send(amount int) {
-	am := fmt.Sprintf("%v", amount)
+	am := fmt.Sprintf("%v", amount*int(params.Ether))
 	msg, err := ec.r.PayToken(ec.token, ec.other, am)
 	if err != nil {
 		panic(err)
